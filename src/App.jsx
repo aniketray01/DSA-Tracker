@@ -74,16 +74,32 @@ export default function App() {
     }));
   };
 
+  if (isInitializing) {
+    return <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '1.2rem', color: '#666' }}>Loading your progress...</div>;
+  }
+
   return (
     <Router>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Navbar />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/topics" element={<Topics topics={topics} toggleSubtopic={toggleSubtopic} />} />
-            <Route path="/progress" element={<Progress topics={topics} />} />
-            <Route path="/profile" element={<Profile topics={topics} />} />
+            <Route path="/login" element={userEmail ? <Navigate to="/topics" replace /> : <Login />} />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/topics" 
+              element={userEmail ? <Topics topics={topics} toggleSubtopic={toggleSubtopic} /> : <Navigate to="/login" replace />} 
+            />
+            <Route 
+              path="/progress" 
+              element={userEmail ? <Progress topics={topics} /> : <Navigate to="/login" replace />} 
+            />
+            <Route 
+              path="/profile" 
+              element={userEmail ? <Profile topics={topics} /> : <Navigate to="/login" replace />} 
+            />
+            
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
