@@ -17,48 +17,75 @@ export default function App() {
   const [topics, setTopics] = useState(initialTopics);
   const [userEmail, setUserEmail] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const fetchProgress = async (email) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/progress/${email}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTopics(data.topics);
+        setIsDataLoaded(true);
+      } else if (response.status === 404) {
+        // New user, create initial progress
+        await fetch(`${API_BASE_URL}/progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, topics: initialTopics })
+        });
+        setTopics(initialTopics);
+        setIsDataLoaded(true);
+      }
+    } catch (error) {
+      console.error("Error fetching progress from MongoDB:", error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserEmail(user.email);
-        try {
-          const response = await fetch(`${API_BASE_URL}/progress/${user.email}`);
-          if (response.ok) {
-            const data = await response.json();
-            setTopics(data.topics);
-          } else {
-            await fetch(`${API_BASE_URL}/progress`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: user.email, topics: initialTopics })
-            });
-            setTopics(initialTopics);
-          }
-        } catch (error) {
-          console.error("Error fetching progress from MongoDB:", error);
-        }
+        await fetchProgress(user.email);
       } else {
         setUserEmail(null);
         setTopics(initialTopics);
+        setIsDataLoaded(false);
       }
       setIsInitializing(false);
     });
     return () => unsubscribe();
   }, []);
 
+  // Re-fetch data when the window gains focus to sync across tabs
   useEffect(() => {
-    if (userEmail && !isInitializing) {
-      fetch(`${API_BASE_URL}/progress`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, topics })
-      })
-      .catch(err => {
-        console.error("Error saving progress to MongoDB:", err);
-      });
+    const handleFocus = () => {
+      if (userEmail && !isInitializing) {
+        fetchProgress(userEmail);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [userEmail, isInitializing]);
+
+  // Use a debounce timer to avoid rapid-fire saving
+  useEffect(() => {
+    if (userEmail && isDataLoaded && !isInitializing) {
+      const timeoutId = setTimeout(() => {
+        fetch(`${API_BASE_URL}/progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail, topics })
+        })
+        .then(() => console.log("Progress saved successfully"))
+        .catch(err => {
+          console.error("Error saving progress to MongoDB:", err);
+        });
+      }, 1000); // 1 second debounce
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [topics, userEmail, isInitializing]);
+  }, [topics, userEmail, isDataLoaded, isInitializing]);
 
   const toggleSubtopic = (topicId, subtopicId) => {
     setTopics(prevTopics => prevTopics.map(topic => {
