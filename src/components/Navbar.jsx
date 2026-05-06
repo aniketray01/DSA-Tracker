@@ -24,7 +24,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="navbar-brand">Dashboard</div>
+      <div className="navbar-brand">DSA Tracker</div>
       <div className="navbar-links">
         <Link to="/profile" style={{ fontWeight: location.pathname === '/profile' ? 'bold' : 'normal' }}>Profile</Link>
         <Link to="/topics" style={{ fontWeight: location.pathname === '/topics' ? 'bold' : 'normal' }}>Topics</Link>
