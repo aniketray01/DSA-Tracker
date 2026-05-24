@@ -258,9 +258,9 @@ This project demonstrates practical full-stack engineering skills beyond simple 
 
 **Aniket Ray**
 
-GitHub: https://github.com/yourusername
+GitHub: https://github.com/aniketray01
 
-LinkedIn: https://linkedin.com/in/yourprofile
+LinkedIn: https://www.linkedin.com/in/aniket-ray/
 
 ---
 
